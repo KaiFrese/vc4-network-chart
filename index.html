@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Visualisierung mit Glyphen mit Visualisierungsframework</title>
+        <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+        <script src="scripts/svg-functions.js"></script>
+        <script src="scripts/main.js"></script>
+        <link href="main.css" type="text/css" rel="stylesheet" />
+    </head>
+    <body>
+        <div class="select-container">
+            <input
+                id="file-input"
+                class="file-input"
+                type="file"
+                accept=".txt"
+            />
+            <label
+                >Suche
+                <input id="search-input" type="text" />
+            </label>
+        </div>
+        <div id="chart-svg-container" class="chart-container"></div>
+    </body>
+</html>
