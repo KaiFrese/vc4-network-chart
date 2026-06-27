@@ -1,18 +1,20 @@
 ('use strict');
 
-const UNDEFINED_VALUE = 'NA'; //TODO: make changeable for different dataset
-
 document.addEventListener('DOMContentLoaded', async () => {
     const fileReader = new FileReader();
     let networkData;
     let searchString = '';
-
-    const chartSVG = d3
+    let chartSVG = d3
         .select('#chart-svg-container')
         .append('svg')
         .attr('width', '100%')
         .attr('height', '100%')
         .attr('viewBox', `0 0 ${SVG_SIZE} ${SVG_SIZE}`);
+
+    const svg = chartSVG.append('g');
+    let zoom = d3.zoom().on('zoom', handleZoomAndPan);
+    chartSVG.call(zoom);
+    zoom.scaleTo(chartSVG, 0.03);
 
     document.getElementById('file-input').addEventListener('change', () => {
         const fileInput = document.getElementById('file-input');
@@ -40,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     source = {
                         name: line[keys[0]],
                         id: networkData.nodes.length,
+                        linkCount: 1,
                     };
                     networkData.nodes.push(source);
                 }
@@ -48,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     target = {
                         name: line[keys[1]],
                         id: networkData.nodes.length,
+                        linkCount: 1,
                     };
                     networkData.nodes.push(target);
                 }
@@ -55,12 +59,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 networkData.links.push({
                     source: source.id,
                     target: target.id,
+                    weight: line[keys[2]],
                 });
+
+                source.linkCount++;
+                target.linkCount++;
             });
 
             networkData = updateSearchSelection(networkData, searchString);
 
-            drawChart(chartSVG, networkData);
+            drawChart(svg, networkData);
         }
     });
 
@@ -71,12 +79,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             networkData = updateSearchSelection(networkData, searchString);
 
-            drawChart(chartSVG, networkData);
+            drawChart(svg, networkData);
         });
 });
 
 function updateSearchSelection(data, searchString) {
-    //Todo
+    return {
+        ...data,
+        nodes: data.nodes.map((node) => ({
+            ...node,
+            isActive: node.name.includes(searchString),
+        })),
+    };
+}
 
-    return data;
+function handleZoomAndPan(event) {
+    d3.select('svg g').attr('transform', event.transform);
 }
