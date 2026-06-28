@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         .attr('height', '100%')
         .attr('viewBox', `0 0 ${SVG_SIZE} ${SVG_SIZE}`);
 
-    const svg = chartSVG.append('g');
+    const svgGroup = chartSVG.append('g');
     let zoom = d3.zoom().on('zoom', handleZoomAndPan);
     chartSVG.call(zoom);
     zoom.scaleTo(chartSVG, 0.03);
@@ -24,51 +24,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     fileReader.addEventListener('load', () => {
-        const data = d3.tsvParse(fileReader.result, d3.autoType);
+        let data = d3.tsvParse(fileReader.result, d3.autoType);
 
         if (data.length > 0) {
-            networkData = { nodes: [], links: [] };
-            const keys = Object.keys(data[0]);
-
-            data.forEach((line) => {
-                source = networkData.nodes.find(
-                    (node) => line[keys[0]] === node.name,
-                );
-                target = networkData.nodes.find(
-                    (node) => line[keys[1]] === node.name,
-                );
-
-                if (source === undefined) {
-                    source = {
-                        name: line[keys[0]],
-                        id: networkData.nodes.length,
-                        linkCount: 1,
-                    };
-                    networkData.nodes.push(source);
-                }
-
-                if (target === undefined) {
-                    target = {
-                        name: line[keys[1]],
-                        id: networkData.nodes.length,
-                        linkCount: 1,
-                    };
-                    networkData.nodes.push(target);
-                }
-
-                networkData.links.push({
-                    source: source.id,
-                    target: target.id,
-                    weight: line[keys[2]],
-                });
-
-                source.linkCount++;
-                target.linkCount++;
-            });
-
+            networkData = createNetworkData(data);
             networkData = updateSearchSelection(networkData, searchString);
 
-            drawChart(svg, networkData);
+            drawChart(svgGroup, networkData);
         }
     });
 
@@ -79,20 +41,86 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             networkData = updateSearchSelection(networkData, searchString);
 
-            drawChart(svg, networkData);
+            drawChart(svgGroup, networkData);
         });
 });
 
+function createNetworkData(data) {
+    let networkData = { nodes: [], links: [] };
+    const keys = Object.keys(data[0]);
+
+    data = normalizeParameter(data, keys[2]);
+
+    data.forEach((line) => {
+        source = networkData.nodes.find((node) => line[keys[0]] === node.name);
+        target = networkData.nodes.find((node) => line[keys[1]] === node.name);
+
+        if (source === undefined) {
+            source = {
+                name: line[keys[0]],
+                id: networkData.nodes.length,
+                linkCount: 1,
+            };
+            networkData.nodes.push(source);
+        }
+
+        if (target === undefined) {
+            target = {
+                name: line[keys[1]],
+                id: networkData.nodes.length,
+                linkCount: 1,
+            };
+            networkData.nodes.push(target);
+        }
+
+        networkData.links.push({
+            source: source.id,
+            target: target.id,
+            weight: line[keys[2]],
+        });
+
+        source.linkCount++;
+        target.linkCount++;
+    });
+
+    networkData.nodes = normalizeParameter(networkData.nodes, 'linkCount');
+
+    return networkData;
+}
+
 function updateSearchSelection(data, searchString) {
-    return {
-        ...data,
-        nodes: data.nodes.map((node) => ({
-            ...node,
-            isActive: node.name.includes(searchString),
-        })),
-    };
+    console.log(data.nodes[0]);
+    data.nodes.map((node) => {
+        node.isActive = node.name.includes(searchString);
+        return node;
+    });
+    console.log(data.nodes[0]);
+
+    return data;
 }
 
 function handleZoomAndPan(event) {
     d3.select('svg g').attr('transform', event.transform);
+}
+
+function normalizeParameter(data, key) {
+    const minMax = data.reduce(
+        (acc, dataRow) => {
+            if (dataRow[key] < acc.min) {
+                acc.min = dataRow[key];
+            }
+
+            if (dataRow[key] > acc.max) {
+                acc.max = dataRow[key];
+            }
+
+            return acc;
+        },
+        { min: Number.POSITIVE_INFINITY, max: Number.NEGATIVE_INFINITY },
+    );
+
+    return data.map((dataRow) => {
+        dataRow[key] = (dataRow[key] - minMax.min) / (minMax.max - minMax.min);
+        return dataRow;
+    });
 }
