@@ -3,9 +3,9 @@ const NAMESPACE = 'http://www.w3.org/2000/svg';
 const SVG_SIZE = 8000;
 const MIN_NODE_SIZE = 200;
 const MIN_LINE_WIDTH = 1;
-const LINK_ACTIVE_COLOR = '#246e5d';
-const LINK_INACTIVE_COLOR = '#929292';
-const NODE_ACTIVE_COLOR = '#afffecdd';
+const LINK_ACTIVE_COLOR = '#118167';
+const LINK_INACTIVE_COLOR = '#e1e1e1';
+const NODE_ACTIVE_COLOR = '#afffecf0';
 const NODE_INACTIVE_COLOR = '#e7e7e7dd';
 
 function drawChart(svg, data) {
@@ -37,6 +37,7 @@ function drawChart(svg, data) {
         .enter()
         .append('text')
         .text((data) => data.name)
+        .attr('text-anchor', 'middle')
         .style('font-size', (data) => `${3 * data.linkCount * 10 + 2}rem`);
 
     const simulation = d3
