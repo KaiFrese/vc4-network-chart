@@ -14,7 +14,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const svgGroup = chartSVG.append('g');
     let zoom = d3.zoom().on('zoom', handleZoomAndPan);
     chartSVG.call(zoom);
-    zoom.scaleTo(chartSVG, 0.03);
+    zoom.scaleTo(chartSVG, 0.3);
+
+    let simulation = undefined;
 
     document.getElementById('file-input').addEventListener('change', () => {
         const fileInput = document.getElementById('file-input');
@@ -30,18 +32,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             networkData = createNetworkData(data);
             networkData = updateSearchSelection(networkData, searchString);
 
-            drawChart(svgGroup, networkData);
+            simulation = drawChart(svgGroup, networkData);
         }
     });
 
     document
         .getElementById('search-input')
         .addEventListener('keyup', (event) => {
+            if (simulation !== undefined) {
+                simulation.simulation.stop();
+            }
+
             searchString = event.target.value;
+            networkData = updateSearchSelection(
+                networkData,
+                searchString,
+                simulation,
+            );
 
-            networkData = updateSearchSelection(networkData, searchString);
+            simulation.link.style(
+                'stroke-width',
+                (data) => data.weight * 100 + MIN_LINE_WIDTH,
+            );
 
-            drawChart(svgGroup, networkData);
+            simulation.node.style('fill', (data) =>
+                data.isActive ? NODE_ACTIVE_COLOR : NODE_INACTIVE_COLOR,
+            );
+
+            if (simulation !== undefined) {
+                simulation.simulation.restart();
+            }
         });
 });
 
@@ -74,8 +94,8 @@ function createNetworkData(data) {
         }
 
         networkData.links.push({
-            source: source.id,
-            target: target.id,
+            source: source,
+            target: target,
             weight: line[keys[2]],
         });
 
@@ -89,12 +109,21 @@ function createNetworkData(data) {
 }
 
 function updateSearchSelection(data, searchString) {
-    console.log(data.nodes[0]);
-    data.nodes.map((node) => {
-        node.isActive = node.name.includes(searchString);
-        return node;
+    data.links.forEach((link) => (link.isActive = false));
+
+    data.nodes.forEach((node) => {
+        const isActive = node.name.includes(searchString);
+        node.isActive = isActive;
+
+        if (isActive) {
+            const connectedLinks = data.links.filter(
+                (link) =>
+                    link.target.id === node.id || link.source.id === node.id,
+            );
+
+            connectedLinks.forEach((link) => (link.isActive = true));
+        }
     });
-    console.log(data.nodes[0]);
 
     return data;
 }

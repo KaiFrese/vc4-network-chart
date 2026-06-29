@@ -3,9 +3,10 @@ const NAMESPACE = 'http://www.w3.org/2000/svg';
 const SVG_SIZE = 8000;
 const MIN_NODE_SIZE = 200;
 const MIN_LINE_WIDTH = 1;
-const LINK_COLOR = '#246e5d';
+const LINK_ACTIVE_COLOR = '#246e5d';
+const LINK_INACTIVE_COLOR = '#929292';
 const NODE_ACTIVE_COLOR = '#afffecdd';
-const NODE_INACTIVE_COLOR = '#dadadadd';
+const NODE_INACTIVE_COLOR = '#e7e7e7dd';
 
 function drawChart(svg, data) {
     svg.selectAll('*').remove();
@@ -15,7 +16,9 @@ function drawChart(svg, data) {
         .data(data.links)
         .enter()
         .append('line')
-        .style('stroke', LINK_COLOR)
+        .style('stroke', (data) =>
+            data.isActive ? LINK_ACTIVE_COLOR : LINK_INACTIVE_COLOR,
+        )
         .style('stroke-width', (data) => data.weight * 100 + MIN_LINE_WIDTH);
 
     const node = svg
@@ -36,7 +39,7 @@ function drawChart(svg, data) {
         .text((data) => data.name)
         .style('font-size', (data) => `${3 * data.linkCount * 10 + 2}rem`);
 
-    const simulaion = d3
+    const simulation = d3
         .forceSimulation(data.nodes)
         .force(
             'link',
@@ -65,4 +68,6 @@ function drawChart(svg, data) {
 
             text.attr('x', (data) => data.x).attr('y', (data) => data.y);
         });
+
+    return { simulation, node, link };
 }
