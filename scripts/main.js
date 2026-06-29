@@ -50,9 +50,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 simulation,
             );
 
-            simulation.link.style(
-                'stroke-width',
-                (data) => data.weight * 100 + MIN_LINE_WIDTH,
+            simulation.link.style('stroke', (data) =>
+                data.isActive ? LINK_ACTIVE_COLOR : LINK_INACTIVE_COLOR,
             );
 
             simulation.node.style('fill', (data) =>
@@ -112,7 +111,9 @@ function updateSearchSelection(data, searchString) {
     data.links.forEach((link) => (link.isActive = false));
 
     data.nodes.forEach((node) => {
-        const isActive = node.name.includes(searchString);
+        const isActive = node.name
+            .toLowerCase()
+            .includes(searchString.toLowerCase());
         node.isActive = isActive;
 
         if (isActive) {
